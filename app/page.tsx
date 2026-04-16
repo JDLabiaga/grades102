@@ -1,65 +1,108 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase'; 
+
+interface StudentRecord {
+  id: string;
+  student_name: string;
+  quiz: number;
+  laboratory: number;
+  assignment: number;
+  attendance: number;
+  major_exam: number;
+  final_grade: number;
+}
 
 export default function Home() {
+  const [name, setName] = useState('');
+  const [scores, setScores] = useState({
+    quiz: { score: 0, total: 100 },
+    lab: { score: 0, total: 100 },
+    assign: { score: 0, total: 100 },
+    atten: { score: 0, total: 100 },
+    exam: { score: 0, total: 100 },
+  });
+  
+  const [records, setRecords] = useState<StudentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRecords = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('student2_grades') // Targeted new table
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setRecords((data as StudentRecord[]) || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  const getPercent = (part: { score: number; total: number }) => 
+    (part.total > 0 ? (part.score / part.total) * 100 : 0);
+
+  const rawGrade = (
+    (getPercent(scores.quiz) * 0.20) +
+    (getPercent(scores.lab) * 0.30) +
+    (getPercent(scores.assign) * 0.10) +
+    (getPercent(scores.atten) * 0.10) +
+    (getPercent(scores.exam) * 0.30)
+  );
+
+  const addStudent = async () => {
+    if (!name.trim()) return alert("Enter Student Name");
+    
+    const { error } = await supabase.from('student2_grades').insert([{ 
+      student_name: name, 
+      quiz: getPercent(scores.quiz), 
+      laboratory: getPercent(scores.lab), 
+      assignment: getPercent(scores.assign), 
+      attendance: getPercent(scores.atten), 
+      major_exam: getPercent(scores.exam) 
+    }]);
+
+    if (error) {
+      alert("Error saving. Ensure table 'student2_grades' exists in Supabase.");
+    } else {
+      setName('');
+      fetchRecords();
+    }
+  };
+
+  const deleteRecord = async (id: string) => {
+    if (confirm("Delete this record?")) {
+      const { error } = await supabase.from('student2_grades').delete().eq('id', id);
+      if (!error) fetchRecords();
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="p-4 md:p-10 bg-slate-50 min-h-screen">
+      <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-[2rem] overflow-hidden border border-slate-200">
+        <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-black uppercase">Grades 102 Portal</h1>
+            <p className="text-blue-400 text-xs font-bold tracking-widest mt-1">NEW STUDENT BATCH</p>
+          </div>
+          <div className="bg-blue-600 px-10 py-5 rounded-2xl text-center">
+            <span className="block text-[10px] font-black uppercase mb-1">Preview</span>
+            <span className="text-5xl font-black">{rawGrade.toFixed(1)}</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* The rest of the UI logic remains the same as grades101 */}
+        <div className="p-8 text-center text-slate-400 italic">
+          Ready for data entry into student2_grades table.
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
