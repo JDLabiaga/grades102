@@ -47,14 +47,6 @@ export default function Home() {
   const getPercent = (part: { score: number; total: number }) => 
     (part.total > 0 ? (part.score / part.total) * 100 : 0);
 
-  const rawGrade = (
-    (getPercent(scores.quiz) * 0.20) +
-    (getPercent(scores.lab) * 0.30) +
-    (getPercent(scores.assign) * 0.10) +
-    (getPercent(scores.atten) * 0.10) +
-    (getPercent(scores.exam) * 0.30)
-  );
-
   const addStudent = async () => {
     if (!name.trim()) return alert("Enter Name");
     const { error } = await supabase.from('student2_grades').insert([{ 
@@ -68,49 +60,54 @@ export default function Home() {
     if (error) alert("Error saving"); else { setName(''); fetchRecords(); }
   };
 
+  const deleteRecord = async (id: string) => {
+    if (confirm("Delete this record?")) {
+      const { error } = await supabase.from('student2_grades').delete().eq('id', id);
+      if (!error) fetchRecords();
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#f8fafc] p-6 font-sans">
-      <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen bg-[#f1f5f9] p-4 md:p-8 font-sans">
+      <div className="max-w-7xl mx-auto">
         
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-indigo-700 to-purple-700 rounded-3xl p-8 shadow-2xl mb-8 text-white flex flex-col md:flex-row justify-between items-center border-b-8 border-indigo-900">
-          <div>
-            <h1 className="text-4xl font-black tracking-tighter">STUDENT BATCH B</h1>
-            <p className="opacity-90 font-bold mt-1 uppercase tracking-[0.2em] text-xs">Grades 102 • Academic Portal</p>
-          </div>
-          <div className="mt-6 md:mt-0 bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 text-center min-w-[160px]">
-            <p className="text-[10px] font-black uppercase tracking-tighter mb-1">Preview Grade</p>
-            <p className="text-5xl font-black text-white">{rawGrade.toFixed(1)}</p>
-          </div>
+        {/* Updated Header */}
+        <div className="bg-slate-900 rounded-3xl p-8 shadow-xl mb-8 text-white border-b-4 border-indigo-600">
+          <h1 className="text-3xl font-black tracking-tighter uppercase">Grades Academic Portal</h1>
+          <p className="text-indigo-400 font-bold mt-1 uppercase tracking-[0.2em] text-[10px]">Batch 102 • Finalized Database System</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
           
-          {/* Form Section */}
-          <div className="lg:col-span-1 bg-white rounded-3xl p-6 shadow-xl border border-slate-200">
-            <h3 className="text-xl font-black text-black mb-6 uppercase tracking-tight">Input Data</h3>
+          {/* Input Sidebar */}
+          <div className="xl:col-span-1 bg-white rounded-3xl p-6 shadow-md border border-slate-200 h-fit">
+            <h3 className="text-sm font-black text-black uppercase mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-indigo-600 rounded-full"></span>
+              Registration
+            </h3>
             
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black text-black uppercase mb-2 block">Student Name</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block">Student Name</label>
                 <input 
-                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-600 focus:bg-white transition-all outline-none font-bold text-black"
-                  placeholder="Type Name Here..."
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-600 focus:bg-white transition-all outline-none font-bold text-black"
+                  placeholder="Full Name..."
                   value={name} onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
               {Object.keys(scores).map((k) => (
-                <div key={k} className="flex justify-between items-center gap-4">
-                  <span className="text-[10px] font-black text-black uppercase w-12">{k}</span>
+                <div key={k} className="space-y-2">
+                  <span className="text-[10px] font-black text-slate-500 uppercase">{k} Scores</span>
                   <div className="flex items-center bg-white rounded-xl px-3 py-2 border-2 border-slate-100 focus-within:border-indigo-600 transition-all">
                     <input 
-                      type="number" className="w-12 bg-transparent text-center font-bold text-black outline-none"
+                      type="number" className="w-full bg-transparent text-left font-bold text-black outline-none"
+                      placeholder="Score"
                       onChange={(e) => setScores({...scores, [k]: {...scores[k as keyof typeof scores], score: Number(e.target.value)}})}
                     />
-                    <span className="text-slate-300 font-black mx-1">/</span>
+                    <span className="text-slate-300 font-black mx-2">/</span>
                     <input 
-                      type="number" className="w-12 bg-transparent text-center font-black text-indigo-700 outline-none"
+                      type="number" className="w-12 bg-transparent text-center font-black text-indigo-600 outline-none"
                       defaultValue={100}
                       onChange={(e) => setScores({...scores, [k]: {...scores[k as keyof typeof scores], total: Number(e.target.value)}})}
                     />
@@ -120,53 +117,61 @@ export default function Home() {
 
               <button 
                 onClick={addStudent}
-                className="w-full mt-4 bg-indigo-700 hover:bg-black text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs"
+                className="w-full bg-indigo-600 hover:bg-black text-white font-black py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase text-xs tracking-widest"
               >
-                Save Record
+                Save to Table
               </button>
             </div>
           </div>
 
-          {/* Table Section */}
-          <div className="lg:col-span-2 bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="text-lg font-black text-black uppercase tracking-tight">Cloud Database</h3>
-              <span className="bg-indigo-700 text-white px-4 py-1 rounded-full text-[10px] font-black">
-                {records.length} ENTRIES
-              </span>
+          {/* Expanded Summary Table */}
+          <div className="xl:col-span-3 bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-sm font-black text-black uppercase">Complete Grade Summary</h3>
+              <div className="flex gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase">Live Cloud Sync</span>
+              </div>
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-900 text-[10px] font-black text-slate-400 uppercase">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase border-b border-slate-100">
                   <tr>
-                    <th className="px-6 py-4">Student</th>
-                    <th className="px-6 py-4 text-center">Summary</th>
-                    <th className="px-6 py-4 text-center">Grade</th>
+                    <th className="px-6 py-4 text-black">Student Name</th>
+                    <th className="px-4 py-4 text-center">Quiz</th>
+                    <th className="px-4 py-4 text-center">Lab</th>
+                    <th className="px-4 py-4 text-center">Assig</th>
+                    <th className="px-4 py-4 text-center">Atten</th>
+                    <th className="px-4 py-4 text-center">Exam</th>
+                    <th className="px-6 py-4 text-center">Final %</th>
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-50">
                   {records.map((r) => (
-                    <tr key={r.id} className="hover:bg-indigo-50 transition-colors">
-                      <td className="px-6 py-5">
-                        <p className="font-black text-black text-sm uppercase leading-tight">{r.student_name}</p>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <div className="flex justify-center gap-1">
-                          <span className="text-[9px] font-black bg-slate-100 px-2 py-1 rounded text-black">Q:{r.quiz?.toFixed(0)}</span>
-                          <span className="text-[9px] font-black bg-slate-100 px-2 py-1 rounded text-black">L:{r.laboratory?.toFixed(0)}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <span className="text-sm font-black text-indigo-700">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
+                      <td className="px-6 py-4 font-bold text-black text-sm uppercase">{r.student_name}</td>
+                      <td className="px-4 py-4 text-center font-bold text-slate-500 text-xs">{r.quiz?.toFixed(1)}</td>
+                      <td className="px-4 py-4 text-center font-bold text-slate-500 text-xs">{r.laboratory?.toFixed(1)}</td>
+                      <td className="px-4 py-4 text-center font-bold text-slate-500 text-xs">{r.assignment?.toFixed(1)}</td>
+                      <td className="px-4 py-4 text-center font-bold text-slate-500 text-xs">{r.attendance?.toFixed(1)}</td>
+                      <td className="px-4 py-4 text-center font-bold text-slate-500 text-xs">{r.major_exam?.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
                           {r.final_grade?.toFixed(1)}%
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => deleteRecord(r.id)} className="text-slate-300 hover:text-red-500 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {loading && <div className="p-20 text-center animate-pulse text-indigo-700 font-black uppercase text-[10px] tracking-widest">Syncing Data...</div>}
+              {loading && <div className="p-20 text-center text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">Refreshing Database...</div>}
             </div>
           </div>
 
